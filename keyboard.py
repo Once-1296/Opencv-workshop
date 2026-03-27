@@ -26,26 +26,49 @@ def draw_kb(img, finger_pos, is_pressing):
     
     for r_idx, row in enumerate(rows):
         for c_idx, key in enumerate(row):
-            # Dynamic width for special keys
+            # width of special keys is more
             w_box = 120 if key in ["BKSP", "SPC", "CLR"] else 50
-            # Offset rows to look like a real keyboard
+            # a consistence horizontal offset value for all keys (80 for special keys else 20)
             off = 80 if r_idx == 3 else (r_idx * 20)
+            # so each row has diff offset
+            #   QWERTYUIOP
+            #    ASDFGHJKL
+            #     ZXCVBNM
             
             x, y = 30 + (c_idx * (w_box + 8)) + off, 50 + (r_idx * 60)
             
-            # Hover/Press Logic
+            # each landmark has .x .y .z attributes 
+            # x and y range 0 to 1 ,   they tell the ratio with screen
+            # so x=0 means to left and x=1 means right , y=0 means top and y=1 means bottom
+            # z tells the depth ranging from -1 to 1 
+            # here -ve will mean it is infront of wrist and +ve will mean it is behind wrist
+
+            # lets check if the key is pressed or not
             col = CYAN_GLOW
-            if x < finger_pos[0] < x + w_box and y < finger_pos[1] < y + 50:
-                col = (255, 255, 255) if is_pressing else (255, 100, 0)
+            # if finger bw x start and x end and same for y
+            if x < finger_pos[0] < x + w_box and y < finger_pos[1] < y + 50: 
+                col = (255, 255, 255) if is_pressing else (255, 100, 0)  # change blue outline shade if finger on it
                 if is_pressing: 
-                    cv2.rectangle(kb_overlay, (x, y), (x + w_box, y + 50), (255, 150, 0), -1)
+                    cv2.rectangle(kb_overlay, (x, y), (x + w_box, y + 50), (255, 150, 0), -1) 
+                    # colour whole key if pressed (-1 thickness means colour))
             
             # Draw Key Border and Text
+            # cv2.rectangle(img, top_left, bottom_right, colour, thickness)
             cv2.rectangle(kb_overlay, (x, y), (x + w_box, y + 50), col, 2)
+            # cv2.putText(img, string/text, bottom_left_coord, font, fontscale, colour, thickness)
             cv2.putText(kb_overlay, key, (x + 10, y + 35), cv2.FONT_HERSHEY_SIMPLEX, 0.5, col, 2)
 
-    # Add a slight glow for the 'Sci-Fi' look
+    # GLOW EFFECT 
+    # We blur the overlay to create a kind of glow effect.
+    # cv2.GaussianBlur(img, kernal dimensions, sigmaX=0)
     glow = cv2.GaussianBlur(kb_overlay, (15, 15), 0)
+    # Mix the original image + the glow + the sharp lines together.
+    # overlay is the shield image we created which we will add on our original image(frame)
+    # glow image is a soft blurred version of overlay
+    # cv2.addWeighhted(original image, alpha of original, 
+    #                   the other image we want to add, beta = other image alpha,
+    #                   gamma, save result in this image)
+    # img = alpha*img + beta*other + gamma
     cv2.addWeighted(img, 1.0, glow, 0.6, 0, img)
     cv2.addWeighted(img, 1.0, kb_overlay, 1.0, 0, img)
 
@@ -61,7 +84,7 @@ while cap.isOpened():
     results = hands.process(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB))
     
     ix, iy = 0, 0 # Finger pointer coordinates
-    is_poking = False
+    is_poking = False  # if finger is poking then it i spressing the key
 
     if results.multi_hand_landmarks:
         for hand_lms in results.multi_hand_landmarks:
@@ -79,7 +102,7 @@ while cap.isOpened():
             draw_kb(frame, (ix, iy), is_poking)
 
             # --- INPUT HANDLING ---
-            if is_poking and (time.time() - last_key_press) > 0.8:
+            if is_poking and (time.time() - last_key_press) > 0.8:   #time buffer to reduce sensitive
                 for r_idx, row in enumerate(rows):
                     for c_idx, key in enumerate(row):
                         wb = 120 if key in ["BKSP", "SPC", "CLR"] else 50
