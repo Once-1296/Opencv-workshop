@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
-
-img = cv2.imread('assets/input.png')
+from constants import input_img
+img = cv2.imread(input_img)
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 # BITWISE OPERATIONS

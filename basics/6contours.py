@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
-
-img = cv2.imread('assets/contour_input.png') # Use an image with clear shapes
+from constants import contour_input_img
+img = cv2.imread(contour_input_img) # Use an image with clear shapes
 gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
 
 # 1. Edges
